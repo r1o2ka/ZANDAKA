@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ZANDAKA | リアルタイム残高計算</title>
+    <meta name="theme-color" content="#111827" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128' viewBox='0 0 128 128'%3E%3Crect width='128' height='128' rx='24' fill='%23111827'/%3E%3Ctext x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-family='system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial' font-size='56' fill='%23fff'%3E%E5%89%B2%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="brand">
+        <div class="logo">残</div>
+        <div>
+          <h1>ZANDAKA</h1>
+          <p class="subtitle">入力と同時に残高を自動計算</p>
+        </div>
+      </div>
+      <nav class="toolbar">
+        <button id="btn-export" class="ghost">エクスポート</button>
+        <button id="btn-reset" class="danger ghost">全消去</button>
+      </nav>
+    </header>
+
+    <main class="layout">
+      <section class="panel">
+        <h2>現在の口座残高と表示期間</h2>
+        <div class="grid two">
+          <div>
+            <label class="field date-field">
+              <span>残高日</span>
+              <input id="base-date" type="date" />
+            </label>
+          </div>
+          <div>
+            <label class="field amount-field">
+              <span>現在の口座残高 (¥)</span>
+              <input
+                id="base-amount"
+                type="text"
+                inputmode="numeric"
+                placeholder="例: 1,000,000"
+              />
+            </label>
+          </div>
+        </div>
+        <div class="grid two">
+          <div>
+            <label class="field date-field">
+              <span>表示開始</span>
+              <input id="range-start" type="date" />
+            </label>
+          </div>
+          <div>
+            <label class="field date-field">
+              <span>表示終了</span>
+              <input id="range-end" type="date" />
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>エントリー追加</h2>
+        <form id="entry-form" class="grid two">
+          <label class="field date-field">
+            <span>日付</span>
+            <input id="entry-date" type="date" required />
+          </label>
+          <label class="field amount-field">
+            <span>種類</span>
+            <select id="entry-kind" style="display: none">
+              <option value="income">収入</option>
+              <option value="expense">支出</option>
+              <option value="future-large">未来予定支出</option>
+            </select>
+            <button type="button" id="kind-trigger" class="kind-trigger">
+              収入
+            </button>
+          </label>
+          <label class="field amount-field">
+            <span>金額 (¥)</span>
+            <input
+              id="entry-amount"
+              type="text"
+              inputmode="numeric"
+              placeholder="例: 50,000"
+              required
+            />
+          </label>
+          <label class="field amount-field">
+            <span>メモ</span>
+            <input
+              id="entry-note"
+              type="text"
+              placeholder="例: 給与 / クレカ支払い"
+            />
+          </label>
+          <label class="toggle span-two">
+            <input id="entry-recurring" type="checkbox" />
+            <span>毎月くり返す</span>
+          </label>
+          <div class="recurrence-row">
+            <label class="field date-field">
+              <span>くり返し終了 (任意)</span>
+              <input id="entry-end" type="date" />
+              <button
+                type="button"
+                id="entry-end-clear"
+                class="clear-btn"
+                aria-label="終了日をクリア"
+              >
+                ✕
+              </button>
+            </label>
+          </div>
+          <div class="row-end span-two">
+            <button type="submit" class="primary">追加</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel">
+        <h2>エントリー一覧</h2>
+        <div class="entries-controls">
+          <input
+            id="entries-search"
+            type="text"
+            placeholder="検索"
+            aria-label="検索"
+          />
+          <select
+            id="entries-kind-filter"
+            aria-label="種類で絞り込み"
+            style="display: none"
+          >
+            <option value="">すべて</option>
+            <option value="income">収入</option>
+            <option value="expense">支出</option>
+          </select>
+          <div
+            id="entries-kind-seg"
+            class="segmented"
+            role="group"
+            aria-label="種類で絞り込み"
+          >
+            <button type="button" class="seg" data-value="">すべて</button>
+            <button type="button" class="seg" data-value="income">収入</button>
+            <button type="button" class="seg" data-value="expense">支出</button>
+          </div>
+          <!-- <button
+            id="entries-sort-toggle"
+            type="button"
+            class="ghost"
+            aria-label="並び替え"
+          >
+            並び: カスタム
+          </button> -->
+          <label class="toggle">
+            <input id="entries-compact" type="checkbox" />
+            <span>コンパクト表示</span>
+          </label>
+        </div>
+        <div id="entries-list" class="entries"></div>
+      </section>
+
+      <section class="panel">
+        <h2>未来予定支出（メモ）</h2>
+        <div id="planned-list" class="entries"></div>
+      </section>
+      <section class="panel span-two">
+        <h2>タイムライン</h2>
+        <div id="timeline" class="timeline"></div>
+      </section>
+
+      <section class="panel span-two">
+        <h2>月次サマリー</h2>
+        <div class="toggles" style="margin-bottom: 8px">
+          <label class="toggle">
+            <input id="toggle-monthly-recurring" type="checkbox" checked />
+            <span>毎月くり返しを集計に含める</span>
+          </label>
+        </div>
+        <div id="monthly" class="monthly"></div>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      <div>Made for you — 残高はローカル保存。インターネット不要。</div>
+      <div class="tiny"></div>
+    </footer>
+
+    <a href="./summary.html" class="fab-summary">サマリー</a>
+
+    <!-- Edit Modal -->
+    <div id="edit-modal" class="modal-backdrop" hidden>
+      <div
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="edit-title"
+      >
+        <div class="modal-header">
+          <h3 id="edit-title">エントリーを編集</h3>
+          <button id="edit-close" class="ghost" aria-label="閉じる">✕</button>
+        </div>
+        <form id="edit-form" class="grid two">
+          <label class="field span-two">
+            <span>メモ</span>
+            <input
+              type="text"
+              data-edit="note"
+              placeholder="例: 家賃 / 給与 / クレカ支払い"
+            />
+          </label>
+          <label class="field">
+            <span>日付</span>
+            <input type="date" data-edit="date" />
+          </label>
+          <label class="field">
+            <span>金額 (¥)</span>
+            <input
+              type="text"
+              inputmode="numeric"
+              data-edit="amount"
+              placeholder="例: 50,000"
+            />
+          </label>
+          <div class="modal-actions span-two">
+            <button type="submit" class="primary">保存</button>
+            <button type="button" id="edit-cancel">キャンセル</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
