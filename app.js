@@ -6,6 +6,7 @@ const state = {
 	baseAmount: 0,
 	rangeStart: null,
 	rangeEnd: null,
+	lang: "ja",
 	showRecurringInMonthly: true,
 	timelineCollapsedMonths: [], // array of 'YYYY-MM'
 	entries: [], // {id, date, kind, amount, note, recurring, endDate}
@@ -19,6 +20,104 @@ const state = {
 const byId = (id) => document.getElementById(id);
 const $ = byId;
 
+// --- I18N ---
+// language will be stored in state.lang: 'ja' | 'en' | 'es'
+const I18N = {
+	ja: {
+		subtitle: "入力と同時に残高を自動計算",
+		export: "エクスポート",
+		reset: "全消去",
+		panel: { balanceTitle: "現在の口座残高と表示期間", addEntry: "エントリー追加" },
+		baseDate: "残高日",
+		baseAmount: "現在の口座残高 (¥)",
+		rangeStart: "表示開始",
+		rangeEnd: "表示終了",
+		entry: { date: "日付", kind: "種類", amount: "金額 (¥)", note: "メモ", recurring: "毎月くり返す", recurrenceEnd: "くり返し終了 (任意)" },
+		add: "追加",
+		entries: { title: "エントリー一覧", empty: "エントリーがありません。上のフォームから追加してください。" },
+		filter: { all: "すべて" },
+		compact: "コンパクト表示",
+		kind: { income: "収入", expense: "支出", future: "未来予定支出" },
+		planned: { title: "未来予定支出（メモ）", none: "未来予定支出のメモはまだありません。" },
+		timeline: { title: "タイムライン", baseInfo: "現在の口座残高", balance: "残高:" },
+		monthly: { title: "月次サマリー", income: "収入:", expense: "支出:", end: "月末残高:" },
+		toggle: { monthly: { recurring: "毎月くり返しを集計に含める" } },
+		summary: "サマリー",
+		edit: { title: "エントリーを編集" },
+		save: "保存",
+		cancel: "キャンセル",
+		editBtn: "編集",
+		deleteBtn: "削除",
+		noNote: "（メモなし）",
+		everyMonth: "毎月",
+	},
+	en: {
+		subtitle: "Real-time balance as you type",
+		export: "Export",
+		reset: "Reset all",
+		panel: { balanceTitle: "Current Balance & Display Range", addEntry: "Add Entry" },
+		baseDate: "Base date",
+		baseAmount: "Current account balance (¥)",
+		rangeStart: "Range start",
+		rangeEnd: "Range end",
+		entry: { date: "Date", kind: "Type", amount: "Amount (¥)", note: "Note", recurring: "Repeat monthly", recurrenceEnd: "Repeat until (optional)" },
+		add: "Add",
+		entries: { title: "Entries", empty: "No entries. Use the form above to add one." },
+		filter: { all: "All" },
+		compact: "Compact list",
+		kind: { income: "Income", expense: "Expense", future: "Planned expense" },
+		planned: { title: "Planned Expenses (Memo)", none: "No planned expenses yet." },
+		timeline: { title: "Timeline", baseInfo: "Current balance", balance: "Balance:" },
+		monthly: { title: "Monthly Summary", income: "Income:", expense: "Expense:", end: "End balance:" },
+		toggle: { monthly: { recurring: "Include monthly repeats in totals" } },
+		summary: "Summary",
+		edit: { title: "Edit Entry" },
+		save: "Save",
+		cancel: "Cancel",
+		editBtn: "Edit",
+		deleteBtn: "Delete",
+		noNote: "(no note)",
+		everyMonth: "Monthly",
+	},
+	es: {
+		subtitle: "Saldo en tiempo real al escribir",
+		export: "Exportar",
+		reset: "Borrar todo",
+		panel: { balanceTitle: "Saldo Actual y Rango de Visualización", addEntry: "Añadir movimiento" },
+		baseDate: "Fecha base",
+		baseAmount: "Saldo actual de la cuenta (¥)",
+		rangeStart: "Inicio",
+		rangeEnd: "Fin",
+		entry: { date: "Fecha", kind: "Tipo", amount: "Importe (¥)", note: "Nota", recurring: "Repetir mensualmente", recurrenceEnd: "Repetir hasta (opcional)" },
+		add: "Añadir",
+		entries: { title: "Movimientos", empty: "No hay movimientos. Usa el formulario para añadir." },
+		filter: { all: "Todos" },
+		compact: "Vista compacta",
+		kind: { income: "Ingreso", expense: "Gasto", future: "Gasto planificado" },
+		planned: { title: "Gastos planificados (Memo)", none: "Sin gastos planificados." },
+		timeline: { title: "Cronología", baseInfo: "Saldo actual", balance: "Saldo:" },
+		monthly: { title: "Resumen mensual", income: "Ingresos:", expense: "Gastos:", end: "Saldo final:" },
+		toggle: { monthly: { recurring: "Incluir repeticiones mensuales" } },
+		summary: "Resumen",
+		edit: { title: "Editar movimiento" },
+		save: "Guardar",
+		cancel: "Cancelar",
+		editBtn: "Editar",
+		deleteBtn: "Eliminar",
+		noNote: "(sin nota)",
+		everyMonth: "Mensual",
+	},
+};
+function t(key) {
+	const lang = state.lang || "ja";
+	const parts = key.split(".");
+	let v = I18N[lang];
+	for (const p of parts) v = v ? v[p] : undefined;
+	if (typeof v === "string") return v;
+	let fb = I18N.ja;
+	for (const p of parts) fb = fb ? fb[p] : undefined;
+	return typeof fb === "string" ? fb : key;
+}
 function save() {
 	localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
@@ -139,6 +238,7 @@ function ensureDefaults() {
 	if (!state.baseDate) state.baseDate = t;
 	if (!state.rangeStart) state.rangeStart = t;
 	if (!state.rangeEnd) state.rangeEnd = ymd(addMonthsClamp(toDate(t), 2));
+	if (!state.lang) state.lang = "ja";
 	if (!Array.isArray(state.timelineCollapsedMonths)) state.timelineCollapsedMonths = [];
 	ensureUiOrder();
 	if (typeof state.showRecurringInMonthly !== "boolean") state.showRecurringInMonthly = true;
@@ -292,6 +392,8 @@ function renderControls() {
 	$("base-amount").value = state.baseAmount ? toInt(state.baseAmount).toLocaleString("ja-JP") : "";
 	$("range-start").value = state.rangeStart || "";
 	$("range-end").value = state.rangeEnd || "";
+	const langBtn = $("btn-lang");
+	if (langBtn) langBtn.textContent = (state.lang || "ja").toUpperCase();
 	const tmr = $("toggle-monthly-recurring");
 	if (tmr) tmr.checked = !!state.showRecurringInMonthly;
 	// entries controls
@@ -313,13 +415,10 @@ function renderControls() {
 }
 
 function kindLabel(kind) {
-	switch (kind) {
-		case "income": return "収入";
-		case "expense": return "支出";
-		case "future-small": return "未来予定支出";
-		case "future-large": return "未来予定支出";
-		default: return kind;
-	}
+	if (kind === "income") return t("kind.income");
+	if (kind === "expense") return t("kind.expense");
+	if (kind === "future-small" || kind === "future-large") return t("kind.future");
+	return kind;
 }
 function amountSignClass(kind) {
 	if (kind === "income") return "plus";
@@ -331,7 +430,7 @@ function renderEntries() {
 	const list = $("entries-list");
 	const normal = state.entries.filter((e) => e.kind !== "future-small" && e.kind !== "future-large");
 	if (!normal.length) {
-		list.innerHTML = `<div class="tiny muted">エントリーがありません。上のフォームから追加してください。</div>`;
+		list.innerHTML = `<div class="tiny muted">${t("entries.empty")}</div>`;
 		return;
 	}
 	// filter by kind and search
@@ -367,18 +466,18 @@ function renderEntries() {
 		row.setAttribute("draggable", "true");
 		row.dataset.id = e.id;
 		const detailsHtml = e.recurring
-			? `<div class="tiny muted"><div>毎月</div><div class="date-range"><span class="date-badge">${e.date}</span>${e.endDate ? ` <span class="arrow">→</span> <span class="date-badge">${e.endDate}</span>` : ""}</div></div>`
+			? `<div class="tiny muted"><div>${t("everyMonth")}</div><div class="date-range"><span class="date-badge">${e.date}</span>${e.endDate ? ` <span class="arrow">→</span> <span class="date-badge">${e.endDate}</span>` : ""}</div></div>`
 			: `<div class="tiny muted"><span class="date-badge">${e.date}</span></div>`;
 		row.innerHTML = `
 			<span class="tag ${e.kind}">${kindLabel(e.kind)}</span>
 			<div>
-				<div>${e.note ? escapeHtml(e.note) : "<span class='muted'>（メモなし）</span>"}</div>
+				<div>${e.note ? escapeHtml(e.note) : "<span class='muted'>" + t("noNote") + "</span>"}</div>
 				${detailsHtml}
 			</div>
 			<div class="amount ${amountSignClass(e.kind)}">${fmt(e.kind === "income" ? toInt(e.amount) : -toInt(e.amount))}</div>
 			<div class="actions">
-				<button data-act="edit" data-id="${e.id}">編集</button>
-				<button class="danger" data-act="del" data-id="${e.id}">削除</button>
+				<button data-act="edit" data-id="${e.id}">${t("editBtn")}</button>
+				<button class="danger" data-act="del" data-id="${e.id}">${t("deleteBtn")}</button>
 			</div>
 		`;
 		list.appendChild(row);
@@ -447,7 +546,7 @@ function renderPlanned() {
 	if (!root) return;
 	const planned = state.entries.filter((e) => e.kind === "future-small" || e.kind === "future-large");
 	if (!planned.length) {
-		root.innerHTML = `<div class="tiny muted">未来予定支出のメモはまだありません。</div>`;
+		root.innerHTML = `<div class="tiny muted">${t("planned.none")}</div>`;
 		return;
 	}
 	const sorted = [...planned].sort((a, b) => {
@@ -457,20 +556,20 @@ function renderPlanned() {
 	});
 	const total = planned.reduce((sum, e) => sum + toInt(e.amount), 0);
 	const frag = [];
-	frag.push(`<div class="tiny muted">合計予定支出: <strong>${fmt(total)}</strong></div>`);
+	frag.push(`<div class="tiny muted"><span class="label">${t("planned.title")}</span> <strong>${fmt(total)}</strong></div>`);
 	for (const e of sorted) {
 		const row = document.createElement("div");
 		row.className = "entry";
 		row.innerHTML = `
 			<span class="tag ${e.kind}">${kindLabel(e.kind)}</span>
 			<div>
-				<div>${e.note ? escapeHtml(e.note) : "<span class='muted'>（メモなし）</span>"}</div>
+				<div>${e.note ? escapeHtml(e.note) : "<span class='muted'>" + t("noNote") + "</span>"}</div>
 				<div class="tiny muted"><span class="date-badge">${e.date || "日付未定"}</span></div>
 			</div>
 			<div class="amount minus">-${fmt(toInt(e.amount))}</div>
 			<div class="actions">
-				<button data-act="edit" data-id="${e.id}">編集</button>
-				<button class="danger" data-act="del" data-id="${e.id}">削除</button>
+				<button data-act="edit" data-id="${e.id}">${t("editBtn")}</button>
+				<button class="danger" data-act="del" data-id="${e.id}">${t("deleteBtn")}</button>
 			</div>
 		`;
 		root.appendChild(row);
@@ -493,12 +592,12 @@ function renderTimeline() {
 	const { base, days } = computeLedger();
 	const root = $("timeline");
 	if (!days.length) {
-		root.innerHTML = `<div class="tiny muted">期間内に表示できるイベントがありません。</div>`;
+		root.innerHTML = `<div class="tiny muted">No items.</div>`;
 		return;
 	}
-	const baseInfo = base.date ? `${base.date} 時点: ${fmt(base.amount)}` : `設定: ${fmt(base.amount)}`;
+	const baseInfo = base.date ? `${base.date} — ${fmt(base.amount)}` : `${fmt(base.amount)}`;
 	const frags = [];
-	frags.push(`<div class="muted base-info">現在の口座残高 — ${baseInfo}</div>`);
+	frags.push(`<div class="muted base-info">${t("timeline.baseInfo")} — ${baseInfo}</div>`);
 	// group days by month
 	const groups = {};
 	for (const d of days) {
@@ -523,7 +622,7 @@ function renderTimeline() {
 					<div class="day-head">
 						<div class="muted">${d.date}</div>
 						<div class="muted"></div>
-						<div class="balance"><span class="label">残高:</span><span class="value">${fmt(d.balanceAfter)}</span></div>
+						<div class="balance"><span class="label">${t("timeline.balance")}</span><span class="value">${fmt(d.balanceAfter)}</span></div>
 					</div>
 					<div class="day-entries">
 						${lines}
@@ -608,9 +707,9 @@ function renderMonthly() {
 		frags.push(`
 			<div class="month">
 				<div class="muted">${m.month}</div>
-				<div class="muted kv"><span class="label">収入:</span><span class="value">${fmt(m.income)}</span></div>
-				<div class="muted kv"><span class="label">支出:</span><span class="value">${fmt(m.expense)}</span></div>
-				<div class="kv"><span class="label">月末残高:</span><span class="value">${fmt(m.endBalance)}</span></div>
+				<div class="muted kv"><span class="label">${t("monthly.income")}</span><span class="value">${fmt(m.income)}</span></div>
+				<div class="muted kv"><span class="label">${t("monthly.expense")}</span><span class="value">${fmt(m.expense)}</span></div>
+				<div class="kv"><span class="label">${t("monthly.end")}</span><span class="value">${fmt(m.endBalance)}</span></div>
 			</div>
 		`);
 	}
@@ -620,6 +719,7 @@ function renderMonthly() {
 function renderAll() {
 	renderControls();
 	renderEntries();
+	applyI18n();
 	const planned = $("planned-list");
 	if (planned) {
 		planned.innerHTML = "";
@@ -707,6 +807,18 @@ function wireControls() {
 
 	$("btn-reset").addEventListener("click", clearAll);
 	$("btn-export").addEventListener("click", doExport);
+	const langBtn = $("btn-lang");
+	if (langBtn) {
+		langBtn.addEventListener("click", () => {
+			const order = ["ja", "en", "es"];
+			const idx = order.indexOf(state.lang || "ja");
+			const next = order[(idx + 1) % order.length];
+			state.lang = next;
+			save();
+			applyI18n();
+			renderAll();
+		});
+	}
 
 	// Disable "end date" unless recurring is checked
 	const rec = $("entry-recurring");
@@ -923,6 +1035,41 @@ wireControls();
 renderAll();
 initEditModal();
 
+// Apply i18n to static DOM nodes with data-i18n attributes and some placeholders
+function applyI18n() {
+	document.querySelectorAll("[data-i18n]").forEach((el) => {
+		const key = el.getAttribute("data-i18n");
+		const val = t(key);
+		if (!val) return;
+		// If element is an input with placeholder intention, handle separately
+		if (el.tagName === "INPUT") {
+			el.setAttribute("placeholder", val);
+		} else {
+			el.textContent = val;
+		}
+	});
+	// Entries search placeholder
+	const search = document.getElementById("entries-search");
+	if (search) {
+		const map = { ja: "検索", en: "Search", es: "Buscar" };
+		search.setAttribute("placeholder", map[state.lang] || map.ja);
+	}
+	// Kind trigger label
+	const trigger = document.getElementById("kind-trigger");
+	const sel = document.getElementById("entry-kind");
+	if (trigger && sel) {
+		const v = (trigger.dataset && trigger.dataset.value) || sel.value || "income";
+		trigger.textContent = v === "expense" ? t("kind.expense") : (v === "future-large" ? t("kind.future") : t("kind.income"));
+	}
+	// Update toolbar button labels
+	const exp = document.getElementById("btn-export");
+	const rst = document.getElementById("btn-reset");
+	if (exp) exp.textContent = t("export");
+	if (rst) rst.textContent = t("reset");
+	// Update lang button text
+	const langBtn = document.getElementById("btn-lang");
+	if (langBtn) langBtn.textContent = (state.lang || "ja").toUpperCase();
+}
 // Enhance native date inputs: clicking anywhere on the field opens the picker
 (function enhanceNativeDatePickers(){
   if (window.__customCalendarEnabled) return; // use custom calendar if enabled

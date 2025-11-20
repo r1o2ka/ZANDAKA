@@ -23,28 +23,29 @@
         <div class="logo">残</div>
         <div>
           <h1>ZANDAKA</h1>
-          <p class="subtitle">入力と同時に残高を自動計算</p>
+          <p class="subtitle" data-i18n="subtitle">入力と同時に残高を自動計算</p>
         </div>
       </div>
       <nav class="toolbar">
-        <button id="btn-export" class="ghost">エクスポート</button>
-        <button id="btn-reset" class="danger ghost">全消去</button>
+        <button id="btn-lang" class="ghost" aria-label="Language">JA</button>
+        <button id="btn-export" class="ghost" data-i18n="export">エクスポート</button>
+        <button id="btn-reset" class="danger ghost" data-i18n="reset">全消去</button>
       </nav>
     </header>
 
     <main class="layout">
       <section class="panel">
-        <h2>現在の口座残高と表示期間</h2>
+        <h2 data-i18n="panel.balanceTitle">現在の口座残高と表示期間</h2>
         <div class="grid two">
           <div>
             <label class="field date-field">
-              <span>残高日</span>
+              <span data-i18n="baseDate">残高日</span>
               <input id="base-date" type="date" />
             </label>
           </div>
           <div>
             <label class="field amount-field">
-              <span>現在の口座残高 (¥)</span>
+              <span data-i18n="baseAmount">現在の口座残高 (¥)</span>
               <input
                 id="base-amount"
                 type="text"
@@ -57,13 +58,13 @@
         <div class="grid two">
           <div>
             <label class="field date-field">
-              <span>表示開始</span>
+              <span data-i18n="rangeStart">表示開始</span>
               <input id="range-start" type="date" />
             </label>
           </div>
           <div>
             <label class="field date-field">
-              <span>表示終了</span>
+              <span data-i18n="rangeEnd">表示終了</span>
               <input id="range-end" type="date" />
             </label>
           </div>
@@ -71,25 +72,25 @@
       </section>
 
       <section class="panel">
-        <h2>エントリー追加</h2>
+        <h2 data-i18n="panel.addEntry">エントリー追加</h2>
         <form id="entry-form" class="grid two">
           <label class="field date-field">
-            <span>日付</span>
+            <span data-i18n="entry.date">日付</span>
             <input id="entry-date" type="date" required />
           </label>
           <label class="field amount-field">
-            <span>種類</span>
+            <span data-i18n="entry.kind">種類</span>
             <select id="entry-kind" style="display: none">
-              <option value="income">収入</option>
-              <option value="expense">支出</option>
-              <option value="future-large">未来予定支出</option>
+              <option value="income" data-i18n="kind.income">収入</option>
+              <option value="expense" data-i18n="kind.expense">支出</option>
+              <option value="future-large" data-i18n="kind.future">未来予定支出</option>
             </select>
             <button type="button" id="kind-trigger" class="kind-trigger">
               収入
             </button>
           </label>
           <label class="field amount-field">
-            <span>金額 (¥)</span>
+            <span data-i18n="entry.amount">金額 (¥)</span>
             <input
               id="entry-amount"
               type="text"
@@ -99,7 +100,7 @@
             />
           </label>
           <label class="field amount-field">
-            <span>メモ</span>
+            <span data-i18n="entry.note">メモ</span>
             <input
               id="entry-note"
               type="text"
@@ -108,11 +109,11 @@
           </label>
           <label class="toggle span-two">
             <input id="entry-recurring" type="checkbox" />
-            <span>毎月くり返す</span>
+            <span data-i18n="entry.recurring">毎月くり返す</span>
           </label>
           <div class="recurrence-row">
             <label class="field date-field">
-              <span>くり返し終了 (任意)</span>
+              <span data-i18n="entry.recurrenceEnd">くり返し終了 (任意)</span>
               <input id="entry-end" type="date" />
               <button
                 type="button"
@@ -125,13 +126,13 @@
             </label>
           </div>
           <div class="row-end span-two">
-            <button type="submit" class="primary">追加</button>
+            <button type="submit" class="primary" data-i18n="add">追加</button>
           </div>
         </form>
       </section>
 
       <section class="panel">
-        <h2>エントリー一覧</h2>
+        <h2 data-i18n="entries.title">エントリー一覧</h2>
         <div class="entries-controls">
           <input
             id="entries-search"
@@ -144,9 +145,9 @@
             aria-label="種類で絞り込み"
             style="display: none"
           >
-            <option value="">すべて</option>
-            <option value="income">収入</option>
-            <option value="expense">支出</option>
+            <option value="" data-i18n="filter.all">すべて</option>
+            <option value="income" data-i18n="kind.income">収入</option>
+            <option value="expense" data-i18n="kind.expense">支出</option>
           </select>
           <div
             id="entries-kind-seg"
@@ -154,9 +155,9 @@
             role="group"
             aria-label="種類で絞り込み"
           >
-            <button type="button" class="seg" data-value="">すべて</button>
-            <button type="button" class="seg" data-value="income">収入</button>
-            <button type="button" class="seg" data-value="expense">支出</button>
+            <button type="button" class="seg" data-value="" data-i18n="filter.all">すべて</button>
+            <button type="button" class="seg" data-value="income" data-i18n="kind.income">収入</button>
+            <button type="button" class="seg" data-value="expense" data-i18n="kind.expense">支出</button>
           </div>
           <!-- <button
             id="entries-sort-toggle"
@@ -168,27 +169,27 @@
           </button> -->
           <label class="toggle">
             <input id="entries-compact" type="checkbox" />
-            <span>コンパクト表示</span>
+            <span data-i18n="compact">コンパクト表示</span>
           </label>
         </div>
         <div id="entries-list" class="entries"></div>
       </section>
 
       <section class="panel">
-        <h2>未来予定支出（メモ）</h2>
+        <h2 data-i18n="planned.title">未来予定支出（メモ）</h2>
         <div id="planned-list" class="entries"></div>
       </section>
       <section class="panel span-two">
-        <h2>タイムライン</h2>
+        <h2 data-i18n="timeline.title">タイムライン</h2>
         <div id="timeline" class="timeline"></div>
       </section>
 
       <section class="panel span-two">
-        <h2>月次サマリー</h2>
+        <h2 data-i18n="monthly.title">月次サマリー</h2>
         <div class="toggles" style="margin-bottom: 8px">
           <label class="toggle">
             <input id="toggle-monthly-recurring" type="checkbox" checked />
-            <span>毎月くり返しを集計に含める</span>
+            <span data-i18n="toggle.monthly.recurring">毎月くり返しを集計に含める</span>
           </label>
         </div>
         <div id="monthly" class="monthly"></div>
@@ -200,7 +201,7 @@
       <div class="tiny"></div>
     </footer>
 
-    <a href="./summary.html" class="fab-summary">サマリー</a>
+    <a href="./summary.html" class="fab-summary" data-i18n="summary">サマリー</a>
 
     <!-- Edit Modal -->
     <div id="edit-modal" class="modal-backdrop" hidden>
@@ -211,12 +212,12 @@
         aria-labelledby="edit-title"
       >
         <div class="modal-header">
-          <h3 id="edit-title">エントリーを編集</h3>
+          <h3 id="edit-title" data-i18n="edit.title">エントリーを編集</h3>
           <button id="edit-close" class="ghost" aria-label="閉じる">✕</button>
         </div>
         <form id="edit-form" class="grid two">
           <label class="field span-two">
-            <span>メモ</span>
+            <span data-i18n="entry.note">メモ</span>
             <input
               type="text"
               data-edit="note"
@@ -224,11 +225,11 @@
             />
           </label>
           <label class="field">
-            <span>日付</span>
+            <span data-i18n="entry.date">日付</span>
             <input type="date" data-edit="date" />
           </label>
           <label class="field">
-            <span>金額 (¥)</span>
+            <span data-i18n="entry.amount">金額 (¥)</span>
             <input
               type="text"
               inputmode="numeric"
@@ -237,8 +238,8 @@
             />
           </label>
           <div class="modal-actions span-two">
-            <button type="submit" class="primary">保存</button>
-            <button type="button" id="edit-cancel">キャンセル</button>
+            <button type="submit" class="primary" data-i18n="save">保存</button>
+            <button type="button" id="edit-cancel" data-i18n="cancel">キャンセル</button>
           </div>
         </form>
       </div>
