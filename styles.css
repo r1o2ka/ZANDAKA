@@ -61,7 +61,7 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-left: 6px; /* subtle nudge of entire brand block */
+  margin-left: 2px; /* subtle nudge of entire brand block */
 }
 .logo {
   width: 40px;
@@ -137,6 +137,14 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+}
+.panel .grid.two + .grid.two {
+  margin-top: 10px;
+}
+@media (max-width: 600px) {
+  .panel .grid.two + .grid.two {
+    margin-top: 14px;
+  }
 }
 .span-two.grid {
   grid-template-columns: 1fr 1fr;
