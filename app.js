@@ -993,8 +993,8 @@ function initEditModal() {
 	editClose = document.getElementById("edit-close");
 
 	const close = () => closeEditModal();
-	editCancel.addEventListener("click", close);
-	editClose.addEventListener("click", close);
+	if (editCancel) editCancel.addEventListener("click", close);
+	if (editClose) editClose.addEventListener("click", close);
 	editModal.addEventListener("click", (e) => {
 		if (e.target === editModal) close();
 	});
