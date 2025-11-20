@@ -517,7 +517,6 @@ function renderEntries() {
 			? `<div class="tiny muted"><div>${t("everyMonth")}</div><div class="date-range"><span class="date-badge">${e.date}</span>${e.endDate ? ` <span class="arrow">→</span> <span class="date-badge">${e.endDate}</span>` : ""}</div></div>`
 			: `<div class="tiny muted"><span class="date-badge">${e.date}</span></div>`;
 		row.innerHTML = `
-			<button class="drag-handle" type="button" aria-label="並び替え" title="Drag to reorder" tabindex="-1"></button>
 			<span class="tag ${e.kind}">${kindLabel(e.kind)}</span>
 			<div>
 				<div>${e.note ? escapeHtml(e.note) : "<span class='muted'>" + t("noNote") + "</span>"}</div>
@@ -577,48 +576,26 @@ function renderEntries() {
 		// --- Touch support via Pointer Events (mobile drag & drop) ---
 		let isTouchDragging = false;
 		let activePointerId = null;
-		let longPressTimer = null;
-		const LONG_PRESS_MS = 220;
 		list.addEventListener("pointerdown", (ev) => {
 			if (ev.pointerType !== "touch") return;
 			const row = ev.target.closest && ev.target.closest(".entry");
 			if (!row) return;
-			const startDrag = () => {
-				isTouchDragging = true;
-				activePointerId = ev.pointerId;
-				try { list.setPointerCapture(ev.pointerId); } catch {}
-				draggingEl = row;
-				row.classList.add("dragging");
-				list.style.touchAction = "none";
-			};
-			// if starting on handle, drag immediately; else require long-press
-			if (ev.target.closest && ev.target.closest(".drag-handle")) {
-				startDrag();
-				ev.preventDefault();
-			} else {
-				longPressTimer = window.setTimeout(() => {
-					startDrag();
-				}, LONG_PRESS_MS);
-			}
+			isTouchDragging = true;
+			activePointerId = ev.pointerId;
+			try { list.setPointerCapture(ev.pointerId); } catch {}
+			draggingEl = row;
+			row.classList.add("dragging");
+			// reduce scroll while dragging
+			list.style.touchAction = "none";
+			ev.preventDefault();
 		});
 		list.addEventListener("pointermove", (ev) => {
-			if (!isTouchDragging || ev.pointerId !== activePointerId) {
-				// cancel long-press if finger moved significantly
-				if (longPressTimer) {
-					window.clearTimeout(longPressTimer);
-					longPressTimer = null;
-				}
-				return;
-			}
+			if (!isTouchDragging || ev.pointerId !== activePointerId) return;
 			ev.preventDefault();
 			const after = getDragAfterElement(list, ev.clientY);
 			if (!draggingEl) return;
 			if (after == null) list.appendChild(draggingEl);
 			else list.insertBefore(draggingEl, after);
-			// auto-scroll near viewport edges to ease long lists
-			const edge = 60;
-			if (ev.clientY < edge) window.scrollBy(0, -12);
-			else if (ev.clientY > window.innerHeight - edge) window.scrollBy(0, 12);
 		});
 		const endTouchDrag = () => {
 			if (!isTouchDragging) return;
@@ -627,10 +604,6 @@ function renderEntries() {
 			if (draggingEl) draggingEl.classList.remove("dragging");
 			draggingEl = null;
 			list.style.touchAction = "";
-			if (longPressTimer) {
-				window.clearTimeout(longPressTimer);
-				longPressTimer = null;
-			}
 			// persist new order (same as drop)
 			const ids = Array.from(list.querySelectorAll(".entry")).map((el) => el.dataset.id);
 			let order = 0;
