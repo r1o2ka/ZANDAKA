@@ -96,7 +96,6 @@ body {
   gap: 8px;
   align-items: center;
   margin-left: auto; /* push toolbar to the far right */
-  margin-right: -30px; /* subtle nudge closer to edge */
 }
 .import-label {
   border: 1px dashed var(--border);
