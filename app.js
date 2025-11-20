@@ -259,6 +259,19 @@ function adjustToBusinessDay(dateObj, holidaysSet) {
 	}
 	return d;
 }
+// For income: move backward to previous business day (can cross month/year)
+function adjustToBusinessDayBackward(dateObj, holidaysCacheByYear) {
+	const d = new Date(dateObj);
+	// step back until non-weekend and non-holiday
+	// ensure holidays for the current year are loaded
+	while (true) {
+		const y = d.getFullYear();
+		if (!holidaysCacheByYear[y]) holidaysCacheByYear[y] = buildJapaneseHolidays(y);
+		if (!isWeekend(d) && !holidaysCacheByYear[y].has(ymd(d))) break;
+		d.setDate(d.getDate() - 1);
+	}
+	return d;
+}
 
 function uid() {
 	return Math.random().toString(36).slice(2, 10);
@@ -339,10 +352,13 @@ function expandEntriesInRange(rangeStart, rangeEnd) {
 		let cur = toDate(e.date);
 		const endLimit = e.endDate ? toDate(e.endDate) : end;
 		while (cur <= endLimit) {
-			// shift to business day if weekend/holiday (that month only)
+			// shift to business day if weekend/holiday
 			const year = cur.getFullYear();
 			if (!holidaysCache[year]) holidaysCache[year] = buildJapaneseHolidays(year);
-			const adjusted = adjustToBusinessDay(cur, holidaysCache[year]);
+			// Expenses move forward to next business day; Incomes move backward to the previous business day
+			const adjusted = (e.kind === "income")
+				? adjustToBusinessDayBackward(cur, holidaysCache)
+				: adjustToBusinessDay(cur, holidaysCache[year]);
 			const ymdCur = ymd(adjusted);
 			if (cmpDate(ymdCur, rangeStart) >= 0 && cmpDate(ymdCur, rangeEnd) <= 0) {
 				results.push({ ...e, date: ymdCur, _recurrenceInstance: true });
@@ -557,6 +573,50 @@ function renderEntries() {
 			}
 			save();
 		});
+		// --- Touch support via Pointer Events (mobile drag & drop) ---
+		let isTouchDragging = false;
+		let activePointerId = null;
+		list.addEventListener("pointerdown", (ev) => {
+			if (ev.pointerType !== "touch") return;
+			const row = ev.target.closest && ev.target.closest(".entry");
+			if (!row) return;
+			isTouchDragging = true;
+			activePointerId = ev.pointerId;
+			try { list.setPointerCapture(ev.pointerId); } catch {}
+			draggingEl = row;
+			row.classList.add("dragging");
+			// reduce scroll while dragging
+			list.style.touchAction = "none";
+			ev.preventDefault();
+		});
+		list.addEventListener("pointermove", (ev) => {
+			if (!isTouchDragging || ev.pointerId !== activePointerId) return;
+			ev.preventDefault();
+			const after = getDragAfterElement(list, ev.clientY);
+			if (!draggingEl) return;
+			if (after == null) list.appendChild(draggingEl);
+			else list.insertBefore(draggingEl, after);
+		});
+		const endTouchDrag = () => {
+			if (!isTouchDragging) return;
+			isTouchDragging = false;
+			activePointerId = null;
+			if (draggingEl) draggingEl.classList.remove("dragging");
+			draggingEl = null;
+			list.style.touchAction = "";
+			// persist new order (same as drop)
+			const ids = Array.from(list.querySelectorAll(".entry")).map((el) => el.dataset.id);
+			let order = 0;
+			for (const id of ids) {
+				const entry = state.entries.find((e) => e.id === id);
+				if (entry && entry.kind !== "future-small" && entry.kind !== "future-large") {
+					entry.uiOrder = order++;
+				}
+			}
+			save();
+		};
+		list.addEventListener("pointerup", endTouchDrag);
+		list.addEventListener("pointercancel", endTouchDrag);
 	}
 }
 
