@@ -27,6 +27,7 @@ const I18N = {
 		subtitle: "入力と同時に残高を自動計算",
 		export: "エクスポート",
 		reset: "全消去",
+		dateUnknown: "日付未定",
 		panel: { balanceTitle: "現在の口座残高と表示期間", addEntry: "エントリー追加" },
 		baseDate: "残高日",
 		baseAmount: "現在の口座残高 (¥)",
@@ -55,6 +56,7 @@ const I18N = {
 		subtitle: "Real-time balance as you type",
 		export: "Export",
 		reset: "Reset all",
+		dateUnknown: "Date TBD",
 		panel: { balanceTitle: "Current Balance & Display Range", addEntry: "Add Entry" },
 		baseDate: "Base date",
 		baseAmount: "Current account balance (¥)",
@@ -83,6 +85,7 @@ const I18N = {
 		subtitle: "Saldo en tiempo real al escribir",
 		export: "Exportar",
 		reset: "Borrar todo",
+		dateUnknown: "Fecha por definir",
 		panel: { balanceTitle: "Saldo Actual y Rango de Visualización", addEntry: "Añadir movimiento" },
 		baseDate: "Fecha base",
 		baseAmount: "Saldo actual de la cuenta (¥)",
@@ -106,6 +109,35 @@ const I18N = {
 		deleteBtn: "Eliminar",
 		noNote: "(sin nota)",
 		everyMonth: "Mensual",
+	},
+	pl: {
+		subtitle: "Saldo w czasie rzeczywistym podczas wpisywania",
+		export: "Eksportuj",
+		reset: "Wyczyść wszystko",
+		dateUnknown: "Data do ustalenia",
+		panel: { balanceTitle: "Bieżące saldo i zakres wyświetlania", addEntry: "Dodaj wpis" },
+		baseDate: "Data bazowa",
+		baseAmount: "Bieżące saldo rachunku (¥)",
+		rangeStart: "Początek zakresu",
+		rangeEnd: "Koniec zakresu",
+		entry: { date: "Data", kind: "Rodzaj", amount: "Kwota (¥)", note: "Notatka", recurring: "Powtarzaj co miesiąc", recurrenceEnd: "Powtarzaj do (opcjonalnie)" },
+		add: "Dodaj",
+		entries: { title: "Wpisy", empty: "Brak wpisów. Użyj formularza powyżej, aby dodać." },
+		filter: { all: "Wszystko" },
+		compact: "Widok kompaktowy",
+		kind: { income: "Przychód", expense: "Wydatek", future: "Planowany wydatek" },
+		planned: { title: "Planowane wydatki (Notatka)", none: "Brak planowanych wydatków." },
+		timeline: { title: "Oś czasu", baseInfo: "Bieżące saldo", balance: "Saldo:" },
+		monthly: { title: "Podsumowanie miesięczne", income: "Przychody:", expense: "Wydatki:", end: "Saldo końcowe:" },
+		toggle: { monthly: { recurring: "Uwzględnij miesięczne powtórzenia" } },
+		summary: "Podsumowanie",
+		edit: { title: "Edytuj wpis" },
+		save: "Zapisz",
+		cancel: "Anuluj",
+		editBtn: "Edytuj",
+		deleteBtn: "Usuń",
+		noNote: "(brak notatki)",
+		everyMonth: "Co miesiąc",
 	},
 };
 function t(key) {
@@ -564,7 +596,7 @@ function renderPlanned() {
 			<span class="tag ${e.kind}">${kindLabel(e.kind)}</span>
 			<div>
 				<div>${e.note ? escapeHtml(e.note) : "<span class='muted'>" + t("noNote") + "</span>"}</div>
-				<div class="tiny muted"><span class="date-badge">${e.date || "日付未定"}</span></div>
+				<div class="tiny muted"><span class="date-badge">${e.date || t("dateUnknown")}</span></div>
 			</div>
 			<div class="amount minus">-${fmt(toInt(e.amount))}</div>
 			<div class="actions">
@@ -810,7 +842,7 @@ function wireControls() {
 	const langBtn = $("btn-lang");
 	if (langBtn) {
 		langBtn.addEventListener("click", () => {
-			const order = ["ja", "en", "es"];
+			const order = ["ja", "en", "es", "pl"];
 			const idx = order.indexOf(state.lang || "ja");
 			const next = order[(idx + 1) % order.length];
 			state.lang = next;
@@ -1051,7 +1083,7 @@ function applyI18n() {
 	// Entries search placeholder
 	const search = document.getElementById("entries-search");
 	if (search) {
-		const map = { ja: "検索", en: "Search", es: "Buscar" };
+		const map = { ja: "検索", en: "Search", es: "Buscar", pl: "Szukaj" };
 		search.setAttribute("placeholder", map[state.lang] || map.ja);
 	}
 	// Kind trigger label
