@@ -517,6 +517,7 @@ function renderEntries() {
 			? `<div class="tiny muted"><div>${t("everyMonth")}</div><div class="date-range"><span class="date-badge">${e.date}</span>${e.endDate ? ` <span class="arrow">→</span> <span class="date-badge">${e.endDate}</span>` : ""}</div></div>`
 			: `<div class="tiny muted"><span class="date-badge">${e.date}</span></div>`;
 		row.innerHTML = `
+			<button class="drag-handle" type="button" aria-label="並び替え" title="Drag to reorder" tabindex="-1"></button>
 			<span class="tag ${e.kind}">${kindLabel(e.kind)}</span>
 			<div>
 				<div>${e.note ? escapeHtml(e.note) : "<span class='muted'>" + t("noNote") + "</span>"}</div>
@@ -576,26 +577,48 @@ function renderEntries() {
 		// --- Touch support via Pointer Events (mobile drag & drop) ---
 		let isTouchDragging = false;
 		let activePointerId = null;
+		let longPressTimer = null;
+		const LONG_PRESS_MS = 220;
 		list.addEventListener("pointerdown", (ev) => {
 			if (ev.pointerType !== "touch") return;
 			const row = ev.target.closest && ev.target.closest(".entry");
 			if (!row) return;
-			isTouchDragging = true;
-			activePointerId = ev.pointerId;
-			try { list.setPointerCapture(ev.pointerId); } catch {}
-			draggingEl = row;
-			row.classList.add("dragging");
-			// reduce scroll while dragging
-			list.style.touchAction = "none";
-			ev.preventDefault();
+			const startDrag = () => {
+				isTouchDragging = true;
+				activePointerId = ev.pointerId;
+				try { list.setPointerCapture(ev.pointerId); } catch {}
+				draggingEl = row;
+				row.classList.add("dragging");
+				list.style.touchAction = "none";
+			};
+			// if starting on handle, drag immediately; else require long-press
+			if (ev.target.closest && ev.target.closest(".drag-handle")) {
+				startDrag();
+				ev.preventDefault();
+			} else {
+				longPressTimer = window.setTimeout(() => {
+					startDrag();
+				}, LONG_PRESS_MS);
+			}
 		});
 		list.addEventListener("pointermove", (ev) => {
-			if (!isTouchDragging || ev.pointerId !== activePointerId) return;
+			if (!isTouchDragging || ev.pointerId !== activePointerId) {
+				// cancel long-press if finger moved significantly
+				if (longPressTimer) {
+					window.clearTimeout(longPressTimer);
+					longPressTimer = null;
+				}
+				return;
+			}
 			ev.preventDefault();
 			const after = getDragAfterElement(list, ev.clientY);
 			if (!draggingEl) return;
 			if (after == null) list.appendChild(draggingEl);
 			else list.insertBefore(draggingEl, after);
+			// auto-scroll near viewport edges to ease long lists
+			const edge = 60;
+			if (ev.clientY < edge) window.scrollBy(0, -12);
+			else if (ev.clientY > window.innerHeight - edge) window.scrollBy(0, 12);
 		});
 		const endTouchDrag = () => {
 			if (!isTouchDragging) return;
@@ -604,6 +627,10 @@ function renderEntries() {
 			if (draggingEl) draggingEl.classList.remove("dragging");
 			draggingEl = null;
 			list.style.touchAction = "";
+			if (longPressTimer) {
+				window.clearTimeout(longPressTimer);
+				longPressTimer = null;
+			}
 			// persist new order (same as drop)
 			const ids = Array.from(list.querySelectorAll(".entry")).map((el) => el.dataset.id);
 			let order = 0;
@@ -1205,12 +1232,18 @@ function applyI18n() {
 	pop.style.display = "none";
 	pop.innerHTML = `
 		<div class="calendar-header">
+			<button type="button" class="calendar-nav" data-cal="prevYear" aria-label="前の年">
+				<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 18l-6-6 6-6"/><path d="M13 18l-6-6 6-6"/></svg>
+			</button>
 			<button type="button" class="calendar-nav" data-cal="prev" aria-label="前の月">
 				<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
 			</button>
 			<div class="title"></div>
 			<button type="button" class="calendar-nav" data-cal="next" aria-label="次の月">
 				<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+			</button>
+			<button type="button" class="calendar-nav" data-cal="nextYear" aria-label="次の年">
+				<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 6l6 6-6 6"/><path d="M11 6l6 6-6 6"/></svg>
 			</button>
 		</div>
 		<div class="calendar-grid weekdays"></div>
@@ -1302,8 +1335,21 @@ function applyI18n() {
 		const width = pop.offsetWidth || Math.min(window.innerWidth * 0.92, 384);
 		if (left + width > window.innerWidth - 8) left = window.innerWidth - width - 8;
 		if (left < 8) left = 8;
-		if (top + pop.offsetHeight > window.innerHeight - 8) top = r.top - pop.offsetHeight - pad;
-		if (top < 8) top = 8;
+		const isMobile = window.matchMedia && window.matchMedia("(max-width: 600px)").matches;
+		if (isMobile) {
+			// Always place below the input; if it overflows bottom, scroll the page to make room
+			let overflow = top + pop.offsetHeight - (window.innerHeight - 8);
+			if (overflow > 0) {
+				try { window.scrollBy({ top: overflow, behavior: "auto" }); } catch { window.scrollBy(0, overflow); }
+				// Recalculate after scroll
+				const r2 = input.getBoundingClientRect();
+				top = r2.bottom + pad;
+			}
+		} else {
+			// Desktop: fallback to placing above if not enough space
+			if (top + pop.offsetHeight > window.innerHeight - 8) top = r.top - pop.offsetHeight - pad;
+			if (top < 8) top = 8;
+		}
 		pop.style.left = `${left}px`;
 		pop.style.top = `${top}px`;
 	}
@@ -1332,6 +1378,11 @@ function applyI18n() {
 		if (viewMonth > 11) { viewMonth = 0; viewYear += 1; }
 		renderCalendar();
 	});
+	// Fast navigation by year
+	const prevYearBtn = pop.querySelector("[data-cal='prevYear']");
+	const nextYearBtn = pop.querySelector("[data-cal='nextYear']");
+	if (prevYearBtn) prevYearBtn.addEventListener("click", () => { viewYear -= 1; renderCalendar(); });
+	if (nextYearBtn) nextYearBtn.addEventListener("click", () => { viewYear += 1; renderCalendar(); });
 
 	function addButtonFor(input) {
 		if (input.dataset.enhanced === "1") return;

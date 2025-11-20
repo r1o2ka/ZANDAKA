@@ -404,7 +404,7 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
 }
 .calendar-header {
   display: grid;
-  grid-template-columns: 36px 1fr 36px;
+  grid-template-columns: 36px 36px 1fr 36px 36px;
   gap: 8px;
   align-items: center;
   margin-bottom: 8px;
@@ -653,7 +653,7 @@ button:active {
 }
 .entry {
   display: grid;
-  grid-template-columns: auto 1fr auto auto;
+  grid-template-columns: auto auto 1fr auto auto;
   gap: 8px;
   align-items: center;
   padding: 10px;
@@ -661,6 +661,29 @@ button:active {
   border-radius: 12px;
   background: #0c1429;
   cursor: grab;
+}
+/* Drag handle for easier touch DnD */
+.drag-handle {
+  width: 24px;
+  height: 24px;
+  border: 0;
+  background: transparent;
+  border-radius: 6px;
+  cursor: grab;
+  touch-action: none;
+  /* vertical grip dots */
+  background-image: radial-gradient(currentColor 1px, transparent 1px),
+    radial-gradient(currentColor 1px, transparent 1px),
+    radial-gradient(currentColor 1px, transparent 1px),
+    radial-gradient(currentColor 1px, transparent 1px);
+  background-size: 2px 2px, 2px 2px, 2px 2px, 2px 2px;
+  background-position: 8px 6px, 14px 6px, 8px 14px, 14px 14px;
+  color: var(--muted);
+}
+.drag-handle:active,
+.entry.dragging .drag-handle {
+  cursor: grabbing;
+  color: var(--text);
 }
 /* Subtle, more readable date pill */
 .date-badge {
@@ -1032,26 +1055,31 @@ button:active {
   }
   /* Entry rows: show details on first line, amount on the right; tags/actions below */
   .entry {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: auto 1fr auto;
     grid-template-areas:
-      "details amount"
-      "meta actions";
+      "handle details amount"
+      "meta details actions";
+  }
+  .entry > :nth-child(1) {
+    /* handle */
+    grid-area: handle;
+    align-self: start;
   }
   .entry > :nth-child(2) {
     /* details */
     grid-area: details;
   }
-  .entry > :nth-child(1) {
+  .entry > :nth-child(3) {
     /* tag */
     grid-area: meta;
   }
-  .entry > :nth-child(3) {
+  .entry > :nth-child(4) {
     /* amount */
     grid-area: amount;
     justify-self: end;
     text-align: right;
   }
-  .entry > :nth-child(4) {
+  .entry > :nth-child(5) {
     /* actions */
     grid-area: actions;
     justify-self: end;
