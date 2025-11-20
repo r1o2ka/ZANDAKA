@@ -1055,9 +1055,11 @@ initEditModal();
 		const pad = 6;
 		let left = r.left;
 		let top = r.bottom + pad;
-		const width = 384;
+		const width = pop.offsetWidth || Math.min(window.innerWidth * 0.92, 384);
 		if (left + width > window.innerWidth - 8) left = window.innerWidth - width - 8;
+		if (left < 8) left = 8;
 		if (top + pop.offsetHeight > window.innerHeight - 8) top = r.top - pop.offsetHeight - pad;
+		if (top < 8) top = 8;
 		pop.style.left = `${left}px`;
 		pop.style.top = `${top}px`;
 	}

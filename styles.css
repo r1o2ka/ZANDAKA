@@ -35,6 +35,7 @@ body {
     ),
     var(--bg);
   color: var(--text);
+  -webkit-tap-highlight-color: transparent;
 }
 
 .app-header,
@@ -60,6 +61,7 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
+  margin-left: 6px; /* subtle nudge of entire brand block */
 }
 .logo {
   width: 40px;
@@ -93,6 +95,8 @@ body {
   display: flex;
   gap: 8px;
   align-items: center;
+  margin-left: auto; /* push toolbar to the far right */
+  margin-right: -30px; /* subtle nudge closer to edge */
 }
 .import-label {
   border: 1px dashed var(--border);
@@ -167,6 +171,7 @@ body {
 @media (max-width: 600px) {
   .date-field {
     max-width: 100%;
+    width: 100%;
   }
 }
 .date-field input[type="date"] {
@@ -361,7 +366,7 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
 .calendar-popover {
   position: fixed;
   z-index: 11000; /* above .modal-backdrop (10000) */
-  width: 384px;
+  width: min(92vw, 384px);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 16px;
   background: linear-gradient(
@@ -947,4 +952,126 @@ button:active {
 }
 .kind-option[data-value="future-large"] .kind-icon {
   color: #f59e0b;
+}
+
+/* --- Mobile enhancements --- */
+@media (max-width: 600px) {
+  .app-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .brand h1 {
+    font-size: 16px;
+  }
+  .logo {
+    width: 36px;
+    height: 36px;
+  }
+  .toolbar {
+    justify-content: flex-end;
+  }
+  .grid.two {
+    grid-template-columns: 1fr;
+  }
+  .row-end {
+    justify-content: stretch;
+  }
+  .row-end .primary {
+    width: 100%;
+  }
+  button,
+  .field input,
+  .field select {
+    min-height: 44px; /* comfortable tap targets */
+  }
+  .segmented {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .segmented .seg {
+    flex: 0 0 auto;
+  }
+  /* Entry rows: show details on first line, amount on the right; tags/actions below */
+  .entry {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "details amount"
+      "meta actions";
+  }
+  .entry > :nth-child(2) {
+    /* details */
+    grid-area: details;
+  }
+  .entry > :nth-child(1) {
+    /* tag */
+    grid-area: meta;
+  }
+  .entry > :nth-child(3) {
+    /* amount */
+    grid-area: amount;
+    justify-self: end;
+    text-align: right;
+  }
+  .entry > :nth-child(4) {
+    /* actions */
+    grid-area: actions;
+    justify-self: end;
+  }
+  /* Floating button: avoid iOS bottom bar and move to right */
+  .fab-summary {
+    left: auto;
+    right: 16px;
+    bottom: calc(16px + env(safe-area-inset-bottom));
+    padding: 12px 16px;
+  }
+}
+
+/* iPhone-friendly tightening: 390px (iPhone 12/13/14/15) */
+@media (max-width: 390px) {
+  .app-header,
+  .app-footer {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .layout {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .panel {
+    padding: 12px;
+  }
+  .panel h2 {
+    font-size: 13px;
+  }
+  .brand h1 {
+    font-size: 15px;
+  }
+  .month .kv:last-child {
+    min-width: 160px;
+  }
+}
+
+/* Very narrow devices (iPhone SE/mini widths) */
+@media (max-width: 360px) {
+  .field input,
+  .field select {
+    padding: 12px 12px;
+  }
+  .segmented .seg {
+    padding: 8px 10px;
+  }
+  /* Adjust native picker icon offset to reduce overlap */
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    margin-right: -58px;
+  }
+  .clear-btn {
+    right: 40px;
+    width: 34px;
+    height: 34px;
+  }
+  .calendar-btn {
+    width: 34px;
+    height: 34px;
+  }
 }
