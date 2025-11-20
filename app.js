@@ -35,7 +35,7 @@ const I18N = {
 		rangeEnd: "表示終了",
 		entry: { date: "日付", kind: "種類", amount: "金額 (¥)", note: "メモ", recurring: "毎月くり返す", recurrenceEnd: "くり返し終了 (任意)" },
 		add: "追加",
-		entries: { title: "エントリー一覧", empty: "エントリーがありません。上のフォームから追加してください。" },
+		entries: { title: "エントリー一覧", empty: "エントリーがありません。上のフォームから追加してください。", applyDate: "日付順に並べ替え" },
 		filter: { all: "すべて" },
 		compact: "コンパクト表示",
 		kind: { income: "収入", expense: "支出", future: "未来予定支出" },
@@ -64,7 +64,7 @@ const I18N = {
 		rangeEnd: "Range end",
 		entry: { date: "Date", kind: "Type", amount: "Amount (¥)", note: "Note", recurring: "Repeat monthly", recurrenceEnd: "Repeat until (optional)" },
 		add: "Add",
-		entries: { title: "Entries", empty: "No entries. Use the form above to add one." },
+		entries: { title: "Entries", empty: "No entries. Use the form above to add one.", applyDate: "Sort by date" },
 		filter: { all: "All" },
 		compact: "Compact list",
 		kind: { income: "Income", expense: "Expense", future: "Planned expense" },
@@ -93,7 +93,7 @@ const I18N = {
 		rangeEnd: "Fin",
 		entry: { date: "Fecha", kind: "Tipo", amount: "Importe (¥)", note: "Nota", recurring: "Repetir mensualmente", recurrenceEnd: "Repetir hasta (opcional)" },
 		add: "Añadir",
-		entries: { title: "Movimientos", empty: "No hay movimientos. Usa el formulario para añadir." },
+		entries: { title: "Movimientos", empty: "No hay movimientos. Usa el formulario para añadir.", applyDate: "Ordenar por fecha" },
 		filter: { all: "Todos" },
 		compact: "Vista compacta",
 		kind: { income: "Ingreso", expense: "Gasto", future: "Gasto planificado" },
@@ -122,7 +122,7 @@ const I18N = {
 		rangeEnd: "Koniec zakresu",
 		entry: { date: "Data", kind: "Rodzaj", amount: "Kwota (¥)", note: "Notatka", recurring: "Powtarzaj co miesiąc", recurrenceEnd: "Powtarzaj do (opcjonalnie)" },
 		add: "Dodaj",
-		entries: { title: "Wpisy", empty: "Brak wpisów. Użyj formularza powyżej, aby dodać." },
+		entries: { title: "Wpisy", empty: "Brak wpisów. Użyj formularza powyżej, aby dodać.", applyDate: "Sortuj wg daty" },
 		filter: { all: "Wszystko" },
 		compact: "Widok kompaktowy",
 		kind: { income: "Przychód", expense: "Wydatek", future: "Planowany wydatek" },
@@ -974,6 +974,25 @@ function wireControls() {
 			save(); renderEntries();
 		});
 	}
+	// Apply one-shot date ordering to uiOrder
+	const applyBtn = $("entries-apply-date");
+	if (applyBtn) {
+		applyBtn.addEventListener("click", () => {
+			// sort normal entries (exclude planned) by date then kind
+			const normal = state.entries.filter((e) => e.kind !== "future-small" && e.kind !== "future-large");
+			const sorted = [...normal].sort((a, b) => {
+				const c = cmpDate(a.date, b.date);
+				if (c !== 0) return c;
+				return a.kind.localeCompare(b.kind);
+			});
+			let order = 0;
+			for (const e of sorted) {
+				e.uiOrder = order++;
+			}
+			save();
+			renderEntries();
+		});
+	}
 	const k = $("entries-kind-filter");
 	if (k) {
 		k.addEventListener("change", (e) => {
@@ -1374,19 +1393,8 @@ function applyI18n() {
 					input.dataset.nativeType = "date";
 					try { input.type = "text"; } catch {}
 				}
-				// Avoid triggering native picker on tap inside the input
-				input.addEventListener("click", (e) => {
-					e.preventDefault();
-					if (!input.disabled) openCalendarFor(input);
-				});
-				input.addEventListener("mousedown", (e) => {
-					e.preventDefault();
-					input.focus();
-				});
-				input.addEventListener("touchstart", (e) => {
-					e.preventDefault();
-					input.focus();
-				}, { passive: false });
+				// Mobile: do NOT auto-open calendar on input tap; only the calendar button opens it
+				// Keep input focus behavior default so the caret/selection doesn't jump
 			}
 		} catch {}
 		const btn = document.createElement("button");
@@ -1407,10 +1415,22 @@ function applyI18n() {
 				openCalendarFor(input);
 			});
 		}
-		input.addEventListener("focus", () => {
-			if (input.disabled) return;
-			openCalendarFor(input);
-		});
+		// Desktop: focus opens calendar; Mobile: open only via button to avoid accidental popups
+		try {
+			const isCoarse = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+			if (!isCoarse) {
+				input.addEventListener("focus", () => {
+					if (input.disabled) return;
+					openCalendarFor(input);
+				});
+			}
+		} catch {
+			// Fallback: assume desktop
+			input.addEventListener("focus", () => {
+				if (input.disabled) return;
+				openCalendarFor(input);
+			});
+		}
 	}
 
 	inputs.forEach(addButtonFor);
