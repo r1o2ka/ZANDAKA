@@ -42,6 +42,7 @@
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 16px;
+        align-items: stretch;
       }
       .stat-card {
         background: linear-gradient(
@@ -53,6 +54,12 @@
         border-radius: 16px;
         box-shadow: var(--shadow);
         padding: 20px;
+        width: 100%;
+        justify-self: stretch; /* ensure equal width inside the grid cells */
+        min-width: 0; /* prevent intrinsic sizing from breaking equality */
+        height: 100%; /* equalize heights when cards share a row */
+        display: flex;
+        flex-direction: column;
       }
       .stat-title {
         margin: 0 0 10px 0;
@@ -77,6 +84,9 @@
         border: 1px solid var(--border);
         border-radius: 16px;
         padding: 16px;
+        width: 100%;
+        justify-self: stretch;
+        min-width: 0;
       }
       .bar {
         height: 14px;
@@ -93,11 +103,92 @@
         );
       }
       .ratio-caption {
-        display: flex;
-        justify-content: space-between;
+        display: grid;
+        grid-template-columns: 1fr 1fr; /* equal halves */
+        align-items: center;
         margin-top: 8px;
         color: var(--muted);
         font-size: 12px;
+        gap: 8px;
+      }
+      .ratio-caption #ratio-left {
+        text-align: left;
+      }
+      .ratio-caption #ratio-right {
+        text-align: right;
+      }
+      .stat-pair {
+        grid-column: span 2; /* occupy full row inside .stats */
+        display: grid;
+        grid-template-columns: 1fr 1fr; /* force equal widths */
+        gap: 16px;
+      }
+      /* Mobile layout */
+      @media (max-width: 600px) {
+        /* Ensure the ratio section spans full width equal to other cards */
+        .stats > .ratio {
+          grid-column: 1 / -1 !important;
+          width: 100%;
+          justify-self: stretch;
+          margin-left: 0;
+          margin-right: 0;
+          min-height: 100px; /* make 339×100 on common iPhone widths */
+        }
+        /* 1px optical compensation: some devices render the ratio card 1px narrower */
+        @supports (margin-inline: 1px) {
+          .stats > .ratio {
+            margin-inline: -1px; /* expand by 1px on both sides to match other cards */
+          }
+        }
+        .stat-pair {
+          grid-template-columns: 1fr; /* stack on small screens */
+          gap: 12px;
+        }
+        .summary-header {
+          flex-direction: column;
+          align-items: stretch;
+          gap: 10px;
+          padding: 14px 16px;
+        }
+        .summary-header .brand .logo {
+          width: 36px;
+          height: 36px;
+        }
+        .summary-header .brand h1 {
+          font-size: 16px;
+        }
+        .summary-back {
+          align-self: flex-end;
+          padding: 8px 12px;
+        }
+        .stats {
+          padding: 8px 16px 28px;
+          grid-template-columns: 1fr;
+          gap: 12px;
+        }
+        .stat-card {
+          padding: 16px;
+        }
+        .stat-title {
+          font-size: 12px;
+          margin-bottom: 8px;
+        }
+        .stat-amount {
+          font-size: 28px;
+        }
+        .ratio {
+          grid-column: span 1;
+          padding: 16px;
+          width: 100%;
+          justify-self: stretch;
+          min-width: 0;
+        }
+        .bar {
+          height: 12px;
+        }
+        .ratio-caption {
+          font-size: 11px;
+        }
       }
       @media (max-width: 900px) {
         .stats {
@@ -132,15 +223,17 @@
       <a href="./index.html" class="summary-back">戻る</a>
     </header>
     <main class="stats">
-      <section class="stat-card">
-        <h2 class="stat-title">これまでの総収入</h2>
-        <div id="total-income" class="stat-amount plus">¥0</div>
-      </section>
-      <section class="stat-card">
-        <h2 class="stat-title">これまでの総支出</h2>
-        <div id="total-expense" class="stat-amount minus">¥0</div>
-      </section>
-      <section class="ratio">
+      <div class="stat-pair">
+        <section class="stat-card">
+          <h2 class="stat-title">総収入</h2>
+          <div id="total-income" class="stat-amount plus">¥0</div>
+        </section>
+        <section class="stat-card">
+          <h2 class="stat-title">総支出</h2>
+          <div id="total-expense" class="stat-amount minus">¥0</div>
+        </section>
+      </div>
+      <section class="stat-card ratio">
         <div class="bar"><div id="ratio-bar" style="width: 0%"></div></div>
         <div class="ratio-caption">
           <span id="ratio-left">支出 0%</span>

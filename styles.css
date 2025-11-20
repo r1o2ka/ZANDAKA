@@ -991,6 +991,13 @@ button:active {
   .segmented .seg {
     flex: 0 0 auto;
   }
+  /* Timeline header: keep date left and balance right on one row */
+  .day-head {
+    grid-template-columns: 1fr auto;
+  }
+  .day .balance .label {
+    white-space: nowrap;
+  }
   /* Monthly summary: 2-column stacked layout */
   .month {
     grid-template-columns: 1fr 1fr;
