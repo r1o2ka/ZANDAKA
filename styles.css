@@ -61,7 +61,6 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-left: 2px; /* subtle nudge of entire brand block */
 }
 .logo {
   width: 40px;
