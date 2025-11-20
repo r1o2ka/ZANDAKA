@@ -648,6 +648,11 @@ function wireControls() {
 	$("base-amount").addEventListener("input", (e) => {
 		const n = toInt(e.target.value);
 		e.target.value = n ? n.toLocaleString("ja-JP") : "";
+		// Live update timeline/monthly while typing (mobile keyboards often don't fire 'change' until blur)
+		state.baseAmount = n;
+		// Avoid full render to keep caret position stable; update dependent views only
+		renderTimeline();
+		renderMonthly();
 	});
 	$("base-amount").addEventListener("change", (e) => {
 		state.baseAmount = toInt(e.target.value);
@@ -1092,6 +1097,32 @@ initEditModal();
 	function addButtonFor(input) {
 		if (input.dataset.enhanced === "1") return;
 		input.dataset.enhanced = "1";
+		// On mobile Safari (or touch WebKit), prevent native picker by making input read-only
+		try {
+			const ua = navigator.userAgent || "";
+			const isWebKit = /AppleWebKit/.test(ua);
+			const isIOS = /iP(?:hone|ad|od)/.test(ua);
+			const isCriOS = /CriOS/.test(ua);
+			const isFxiOS = /FxiOS/.test(ua);
+			const pointerCoarse = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+			if (window.__customCalendarEnabled && isWebKit && (isIOS || pointerCoarse) && !isCriOS && !isFxiOS) {
+				input.setAttribute("readonly", "");
+				input.setAttribute("inputmode", "none");
+				// Avoid triggering native picker on tap inside the input
+				input.addEventListener("click", (e) => {
+					e.preventDefault();
+					if (!input.disabled) openCalendarFor(input);
+				});
+				input.addEventListener("mousedown", (e) => {
+					e.preventDefault();
+					input.focus();
+				});
+				input.addEventListener("touchstart", (e) => {
+					e.preventDefault();
+					input.focus();
+				}, { passive: false });
+			}
+		} catch {}
 		const btn = document.createElement("button");
 		btn.type = "button";
 		btn.className = "calendar-btn";

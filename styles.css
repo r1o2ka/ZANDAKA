@@ -991,6 +991,23 @@ button:active {
   .segmented .seg {
     flex: 0 0 auto;
   }
+  /* Monthly summary: 2-column stacked layout */
+  .month {
+    grid-template-columns: 1fr 1fr;
+    row-gap: 8px;
+  }
+  .month > :nth-child(1) {
+    /* YYYY-MM */
+    grid-column: 1 / -1;
+  }
+  .month > :nth-child(4) {
+    /* 月末残高 */
+    grid-column: 1 / -1;
+    justify-self: stretch;
+  }
+  .month .kv:last-child {
+    min-width: 0; /* allow shrinking on small screens */
+  }
   /* Entry rows: show details on first line, amount on the right; tags/actions below */
   .entry {
     grid-template-columns: 1fr auto;
