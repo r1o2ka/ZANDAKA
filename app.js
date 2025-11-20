@@ -1102,12 +1102,15 @@ initEditModal();
 			const ua = navigator.userAgent || "";
 			const isWebKit = /AppleWebKit/.test(ua);
 			const isIOS = /iP(?:hone|ad|od)/.test(ua);
-			const isCriOS = /CriOS/.test(ua);
-			const isFxiOS = /FxiOS/.test(ua);
 			const pointerCoarse = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
-			if (window.__customCalendarEnabled && isWebKit && (isIOS || pointerCoarse) && !isCriOS && !isFxiOS) {
+			if (window.__customCalendarEnabled && isWebKit && (isIOS || pointerCoarse)) {
 				input.setAttribute("readonly", "");
 				input.setAttribute("inputmode", "none");
+				// Fully disable native picker by switching to text type while preserving value
+				if (input.type === "date") {
+					input.dataset.nativeType = "date";
+					try { input.type = "text"; } catch {}
+				}
 				// Avoid triggering native picker on tap inside the input
 				input.addEventListener("click", (e) => {
 					e.preventDefault();

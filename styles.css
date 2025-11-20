@@ -264,6 +264,13 @@ input[type="date"] {
   background-image: none;
   padding-right: 84px; /* leave room for both clear (right) and calendar (left of it) */
 }
+/* Text inputs that emulate date (on iOS when custom calendar is enabled) */
+.as-date {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: none;
+  padding-right: 84px; /* keep room for clear + custom calendar button */
+}
 /* When custom calendar is enabled, hide the native picker indicator to avoid double icons */
 body.custom-calendar input[type="date"]::-webkit-calendar-picker-indicator {
   display: none;
