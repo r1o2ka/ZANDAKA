@@ -35,6 +35,10 @@
       .summary-back:hover {
         border-color: rgba(124, 58, 237, 0.6);
       }
+      /* Right-align the back link */
+      .summary-header .summary-back {
+        margin-left: auto;
+      }
       .stats {
         max-width: 1200px;
         margin: 0 auto;
@@ -222,12 +226,7 @@
           </p>
         </div>
       </div>
-      <div style="display: flex; gap: 8px; align-items: center">
-        <button id="btn-lang" class="summary-back" aria-label="Language">
-          JA
-        </button>
-        <a href="./index.html" class="summary-back" data-i18n="back">戻る</a>
-      </div>
+      <a href="./index.html" class="summary-back" data-i18n="back">戻る</a>
     </header>
     <main class="stats">
       <div class="stat-pair">
