@@ -9,6 +9,7 @@ const state = {
 	lang: "ja",
 	showRecurringInMonthly: true,
 	timelineCollapsedMonths: [], // array of 'YYYY-MM'
+	entriesCollapsedMonths: [], // array of 'YYYY-MM' for Entries section
 	entries: [], // {id, date, kind, amount, note, recurring, endDate}
 	// UI prefs
 	entriesSearch: "",
@@ -285,6 +286,7 @@ function ensureDefaults() {
 	if (!state.rangeEnd) state.rangeEnd = ymd(addMonthsClamp(toDate(t), 2));
 	if (!state.lang) state.lang = "ja";
 	if (!Array.isArray(state.timelineCollapsedMonths)) state.timelineCollapsedMonths = [];
+	if (!Array.isArray(state.entriesCollapsedMonths)) state.entriesCollapsedMonths = [];
 	ensureUiOrder();
 	if (typeof state.showRecurringInMonthly !== "boolean") state.showRecurringInMonthly = true;
 	if (typeof state.entriesSearch !== "string") state.entriesSearch = "";
@@ -506,30 +508,49 @@ function renderEntries() {
 			return c !== 0 ? c : a.kind.localeCompare(b.kind);
 		});
 	}
-	list.innerHTML = "";
-	list.classList.toggle("compact", !!state.entriesCompact);
+	// group by month (like timeline), while search remains global
+	const byMonth = {};
 	for (const e of sorted) {
-		const row = document.createElement("div");
-		row.className = "entry";
-		row.setAttribute("draggable", "true");
-		row.dataset.id = e.id;
-		const detailsHtml = e.recurring
-			? `<div class="tiny muted"><div>${t("everyMonth")}</div><div class="date-range"><span class="date-badge">${e.date}</span>${e.endDate ? ` <span class="arrow">→</span> <span class="date-badge">${e.endDate}</span>` : ""}</div></div>`
-			: `<div class="tiny muted"><span class="date-badge">${e.date}</span></div>`;
-		row.innerHTML = `
-			<span class="tag ${e.kind}">${kindLabel(e.kind)}</span>
-			<div>
-				<div>${e.note ? escapeHtml(e.note) : "<span class='muted'>" + t("noNote") + "</span>"}</div>
-				${detailsHtml}
-			</div>
-			<div class="amount ${amountSignClass(e.kind)}">${fmt(e.kind === "income" ? toInt(e.amount) : -toInt(e.amount))}</div>
-			<div class="actions">
-				<button data-act="edit" data-id="${e.id}">${t("editBtn")}</button>
-				<button class="danger" data-act="del" data-id="${e.id}">${t("deleteBtn")}</button>
-			</div>
-		`;
-		list.appendChild(row);
+		const key = (e.date || "").slice(0, 7) || "----";
+		(byMonth[key] ||= []).push(e);
 	}
+	const months = Object.keys(byMonth).sort();
+	const forceExpand = !!q; // while searching, always expand to show hits
+	const frags = [];
+	for (const m of months) {
+		const collapsed = !forceExpand && state.entriesCollapsedMonths.includes(m);
+		const rows = byMonth[m].map((e) => {
+			const detailsHtml = e.recurring
+				? `<div class="tiny muted"><div>${t("everyMonth")}</div><div class="date-range"><span class="date-badge">${e.date}</span>${e.endDate ? ` <span class="arrow">→</span> <span class="date-badge">${e.endDate}</span>` : ""}</div></div>`
+				: `<div class="tiny muted"><span class="date-badge">${e.date}</span></div>`;
+			return `
+				<div class="entry" draggable="true" data-id="${e.id}">
+					<span class="tag ${e.kind}">${kindLabel(e.kind)}</span>
+					<div>
+						<div>${e.note ? escapeHtml(e.note) : "<span class='muted'>" + t("noNote") + "</span>"}</div>
+						${detailsHtml}
+					</div>
+					<div class="amount ${amountSignClass(e.kind)}">${fmt(e.kind === "income" ? toInt(e.amount) : -toInt(e.amount))}</div>
+					<div class="actions">
+						<button data-act="edit" data-id="${e.id}">${t("editBtn")}</button>
+						<button class="danger" data-act="del" data-id="${e.id}">${t("deleteBtn")}</button>
+					</div>
+				</div>
+			`;
+		}).join("");
+		frags.push(`
+			<div class="month-group ${collapsed ? "collapsed" : ""}" data-month="${m}">
+				<button class="month-toggle" type="button" data-month="${m}" aria-expanded="${collapsed ? "false" : "true"}">
+					<span class="chev">▾</span>${m}
+				</button>
+				<div class="month-days">
+					${rows}
+				</div>
+			</div>
+		`);
+	}
+	list.innerHTML = frags.join("");
+	list.classList.toggle("compact", !!state.entriesCompact);
 	// Delegate actions (bind once)
 	if (!list.dataset.bound) {
 		list.dataset.bound = "1";
@@ -540,6 +561,17 @@ function renderEntries() {
 			const act = btn.dataset.act;
 			if (act === "del") removeEntry(id);
 			if (act === "edit") openEditModal(id);
+		});
+		// Month toggle (collapse/expand)
+		list.addEventListener("click", (ev) => {
+			const btn = ev.target.closest && ev.target.closest(".month-toggle");
+			if (!btn) return;
+			const m = btn.getAttribute("data-month");
+			const i = state.entriesCollapsedMonths.indexOf(m);
+			if (i >= 0) state.entriesCollapsedMonths.splice(i, 1);
+			else state.entriesCollapsedMonths.push(m);
+			save();
+			renderEntries();
 		});
 		// DnD handlers
 		let draggingEl = null;
@@ -558,8 +590,14 @@ function renderEntries() {
 			ev.preventDefault();
 			const after = getDragAfterElement(list, ev.clientY);
 			if (!draggingEl) return;
-			if (after == null) list.appendChild(draggingEl);
-			else list.insertBefore(draggingEl, after);
+			if (after == null) {
+				const parents = list.querySelectorAll(".month-days");
+				const parent = parents[parents.length - 1] || list;
+				parent.appendChild(draggingEl);
+			} else {
+				const parent = after.parentNode || list;
+				parent.insertBefore(draggingEl, after);
+			}
 		});
 		list.addEventListener("drop", () => {
 			// persist new order
@@ -594,8 +632,14 @@ function renderEntries() {
 			ev.preventDefault();
 			const after = getDragAfterElement(list, ev.clientY);
 			if (!draggingEl) return;
-			if (after == null) list.appendChild(draggingEl);
-			else list.insertBefore(draggingEl, after);
+			if (after == null) {
+				const parents = list.querySelectorAll(".month-days");
+				const parent = parents[parents.length - 1] || list;
+				parent.appendChild(draggingEl);
+			} else {
+				const parent = after.parentNode || list;
+				parent.insertBefore(draggingEl, after);
+			}
 		});
 		const endTouchDrag = () => {
 			if (!isTouchDragging) return;
